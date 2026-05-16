@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo</title>
+    <style>
+        body { font-family: sans-serif; margin: 50px; color: #333; }
+        h1 { font-size: 24px; margin-bottom: 20px; }
+        #task-input { width: 300px; padding: 10px; font-size: 16px; }
+        #task-list { margin-top: 20px; font-size: 16px; width: 400px; }
+        .task-item { 
+            padding: 8px 0; 
+            border-bottom: 1px solid #eee; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .complete-btn {
+            background-color: #efefef;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .complete-btn:hover { background-color: #e0e0e0; }
+    </style>
+</head>
+<body>
+
+    <h1>ToDo</h1>
+    
+    <form id="task-form">
+        <input type="text" id="task-input" placeholder="タスクを追加" autofocus autocomplete="off">
+    </form>
+
+    <!-- 過去に保存されたタスクの表示 -->
+    <div id="task-list">
+        {% for task in tasks %}
+        <div class="task-item" id="task-{{ task.id }}">
+            <span>{{ task.text }}</span>
+            <button class="complete-btn" data-id="{{ task.id }}" onclick="deleteExistingTask(this)">完了</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // 新しくタスクを追加した時の処理
+        document.getElementById('task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const input = document.getElementById('task-input');
+            const taskText = input.value.trim();
+
+            if (taskText === '') return;
+
+            fetch('/add_task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task: taskText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addTaskToDOM(data.task.id, data.task.text);
+                    input.value = '';
+                }
+            });
+        });
+
+        // 画面に新しくタスクと完了ボタンを追加する関数
+        function addTaskToDOM(id, text) {
+            const taskList = document.getElementById('task-list');
+            
+            const newItem = document.createElement('div');
+            newItem.className = 'task-item';
+            newItem.id = 'task-' + id;
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            newItem.appendChild(textSpan);
+
+            const completeBtn = document.createElement('button');
+            completeBtn.className = 'complete-btn';
+            completeBtn.textContent = '完了';
+            
+            completeBtn.addEventListener('click', function() {
+                fetch('/delete_task/' + id, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        newItem.remove();
+                    }
+                });
+            });
+
+            newItem.appendChild(completeBtn);
+            taskList.appendChild(newItem);
+        }
+
+        // 過去からあるタスクを消すための関数（修正版）
+        function deleteExistingTask(button) {
+            // ボタンの data-id 属性からIDを取得する
+            const id = button.getAttribute('data-id');
+            
+            fetch('/delete_task/' + id, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('task-' + id).remove();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
