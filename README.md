@@ -89,8 +89,6 @@ FlaskとSQLiteを用いて開発したタスク管理Webアプリケーション
 
 * テストコードの実装（`pytest` によるWeb画面・REST APIの一連の自動テスト）
 * CI/CD環境構築（GitHub Actionsを用いた、プッシュ時の自動テスト＆Dockerビルド検証）
-=======
-=======
 
 ---
 
